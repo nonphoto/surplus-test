@@ -558,17 +558,170 @@ function createTextNode(text, parent) {
     parent.appendChild(node);
     return node;
 }
+function setAttribute(node, name, value) {
+    if (value === false || value === null || value === undefined)
+        node.removeAttribute(name);
+    else
+        node.setAttribute(name, value);
+}
+function setAttributeNS(node, namespace, name, value) {
+    if (value === false || value === null || value === undefined)
+        node.removeAttributeNS(namespace, name);
+    else
+        node.setAttributeNS(namespace, name, value);
+}
 
-var attrNamespaces = {
+var 
+// pre-seed the caches with a few special cases, so we don't need to check for them in the common cases
+htmlFieldCache = {
+    // special props
+    style: ['style', null, 3 /* Assign */],
+    ref: ['ref', null, 2 /* Ignore */],
+    fn: ['fn', null, 2 /* Ignore */],
+    // attr compat
+    class: ['className', null, 0 /* Property */],
+    for: ['htmlFor', null, 0 /* Property */],
+    "accept-charset": ['acceptCharset', null, 0 /* Property */],
+    "http-equiv": ['httpEquiv', null, 0 /* Property */],
+    // a few React oddities, mostly disagreeing about casing
+    onDoubleClick: ['ondblclick', null, 0 /* Property */],
+    spellCheck: ['spellcheck', null, 0 /* Property */],
+    allowFullScreen: ['allowFullscreen', null, 0 /* Property */],
+    autoCapitalize: ['autocapitalize', null, 0 /* Property */],
+    autoFocus: ['autofocus', null, 0 /* Property */],
+    autoPlay: ['autoplay', null, 0 /* Property */],
+    // other
+    // role is part of the ARIA spec but not caught by the aria- attr filter
+    role: ['role', null, 1 /* Attribute */]
+}, svgFieldCache = {
+    // special props
+    style: ['style', null, 3 /* Assign */],
+    ref: ['ref', null, 2 /* Ignore */],
+    fn: ['fn', null, 2 /* Ignore */],
+    // property compat
+    className: ['class', null, 1 /* Attribute */],
+    htmlFor: ['for', null, 1 /* Attribute */],
+    tabIndex: ['tabindex', null, 1 /* Attribute */],
+    // React compat
+    onDoubleClick: ['ondblclick', null, 0 /* Property */],
+    // attributes with eccentric casing - some SVG attrs are snake-cased, some camelCased
+    allowReorder: ['allowReorder', null, 1 /* Attribute */],
+    attributeName: ['attributeName', null, 1 /* Attribute */],
+    attributeType: ['attributeType', null, 1 /* Attribute */],
+    autoReverse: ['autoReverse', null, 1 /* Attribute */],
+    baseFrequency: ['baseFrequency', null, 1 /* Attribute */],
+    calcMode: ['calcMode', null, 1 /* Attribute */],
+    clipPathUnits: ['clipPathUnits', null, 1 /* Attribute */],
+    contentScriptType: ['contentScriptType', null, 1 /* Attribute */],
+    contentStyleType: ['contentStyleType', null, 1 /* Attribute */],
+    diffuseConstant: ['diffuseConstant', null, 1 /* Attribute */],
+    edgeMode: ['edgeMode', null, 1 /* Attribute */],
+    externalResourcesRequired: ['externalResourcesRequired', null, 1 /* Attribute */],
+    filterRes: ['filterRes', null, 1 /* Attribute */],
+    filterUnits: ['filterUnits', null, 1 /* Attribute */],
+    gradientTransform: ['gradientTransform', null, 1 /* Attribute */],
+    gradientUnits: ['gradientUnits', null, 1 /* Attribute */],
+    kernelMatrix: ['kernelMatrix', null, 1 /* Attribute */],
+    kernelUnitLength: ['kernelUnitLength', null, 1 /* Attribute */],
+    keyPoints: ['keyPoints', null, 1 /* Attribute */],
+    keySplines: ['keySplines', null, 1 /* Attribute */],
+    keyTimes: ['keyTimes', null, 1 /* Attribute */],
+    lengthAdjust: ['lengthAdjust', null, 1 /* Attribute */],
+    limitingConeAngle: ['limitingConeAngle', null, 1 /* Attribute */],
+    markerHeight: ['markerHeight', null, 1 /* Attribute */],
+    markerUnits: ['markerUnits', null, 1 /* Attribute */],
+    maskContentUnits: ['maskContentUnits', null, 1 /* Attribute */],
+    maskUnits: ['maskUnits', null, 1 /* Attribute */],
+    numOctaves: ['numOctaves', null, 1 /* Attribute */],
+    pathLength: ['pathLength', null, 1 /* Attribute */],
+    patternContentUnits: ['patternContentUnits', null, 1 /* Attribute */],
+    patternTransform: ['patternTransform', null, 1 /* Attribute */],
+    patternUnits: ['patternUnits', null, 1 /* Attribute */],
+    pointsAtX: ['pointsAtX', null, 1 /* Attribute */],
+    pointsAtY: ['pointsAtY', null, 1 /* Attribute */],
+    pointsAtZ: ['pointsAtZ', null, 1 /* Attribute */],
+    preserveAlpha: ['preserveAlpha', null, 1 /* Attribute */],
+    preserveAspectRatio: ['preserveAspectRatio', null, 1 /* Attribute */],
+    primitiveUnits: ['primitiveUnits', null, 1 /* Attribute */],
+    refX: ['refX', null, 1 /* Attribute */],
+    refY: ['refY', null, 1 /* Attribute */],
+    repeatCount: ['repeatCount', null, 1 /* Attribute */],
+    repeatDur: ['repeatDur', null, 1 /* Attribute */],
+    requiredExtensions: ['requiredExtensions', null, 1 /* Attribute */],
+    requiredFeatures: ['requiredFeatures', null, 1 /* Attribute */],
+    specularConstant: ['specularConstant', null, 1 /* Attribute */],
+    specularExponent: ['specularExponent', null, 1 /* Attribute */],
+    spreadMethod: ['spreadMethod', null, 1 /* Attribute */],
+    startOffset: ['startOffset', null, 1 /* Attribute */],
+    stdDeviation: ['stdDeviation', null, 1 /* Attribute */],
+    stitchTiles: ['stitchTiles', null, 1 /* Attribute */],
+    surfaceScale: ['surfaceScale', null, 1 /* Attribute */],
+    systemLanguage: ['systemLanguage', null, 1 /* Attribute */],
+    tableValues: ['tableValues', null, 1 /* Attribute */],
+    targetX: ['targetX', null, 1 /* Attribute */],
+    targetY: ['targetY', null, 1 /* Attribute */],
+    textLength: ['textLength', null, 1 /* Attribute */],
+    viewBox: ['viewBox', null, 1 /* Attribute */],
+    viewTarget: ['viewTarget', null, 1 /* Attribute */],
+    xChannelSelector: ['xChannelSelector', null, 1 /* Attribute */],
+    yChannelSelector: ['yChannelSelector', null, 1 /* Attribute */],
+    zoomAndPan: ['zoomAndPan', null, 1 /* Attribute */],
+};
+var attributeOnlyRx = /-/, deepAttrRx = /^style-/, isAttrOnlyField = function (field) { return attributeOnlyRx.test(field) && !deepAttrRx.test(field); }, propOnlyRx = /^(on|style)/, isPropOnlyField = function (field) { return propOnlyRx.test(field); }, propPartRx = /[a-z][A-Z]/g, getAttrName = function (field) { return field.replace(propPartRx, function (m) { return m[0] + '-' + m[1]; }).toLowerCase(); }, jsxEventPropRx = /^on[A-Z]/, attrPartRx = /\-(?:[a-z]|$)/g, getPropName = function (field) {
+    var prop = field.replace(attrPartRx, function (m) { return m.length === 1 ? '' : m[1].toUpperCase(); });
+    return jsxEventPropRx.test(prop) ? prop.toLowerCase() : prop;
+}, deepPropRx = /^(style)([A-Z])/, buildPropData = function (prop) {
+    var m = deepPropRx.exec(prop);
+    return m ? [m[2].toLowerCase() + prop.substr(m[0].length), m[1], 0 /* Property */] : [prop, null, 0 /* Property */];
+}, attrNamespaces = {
     xlink: "http://www.w3.org/1999/xlink",
     xml: "http://www.w3.org/XML/1998/namespace",
-}, attrNamespaceRx = new RegExp("^(" + Object.keys(attrNamespaces).join('|') + ")-(.*)");
+}, attrNamespaceRx = new RegExp("^(" + Object.keys(attrNamespaces).join('|') + ")-(.*)"), buildAttrData = function (attr) {
+    var m = attrNamespaceRx.exec(attr);
+    return m ? [m[2], attrNamespaces[m[1]], 1 /* Attribute */] : [attr, null, 1 /* Attribute */];
+};
+var getFieldData = function (field, svg) {
+    var cache = svg ? svgFieldCache : htmlFieldCache, cached = cache[field];
+    if (cached)
+        return cached;
+    var attr = svg && !isPropOnlyField(field)
+        || !svg && isAttrOnlyField(field), name = attr ? getAttrName(field) : getPropName(field);
+    if (name !== field && (cached = cache[name]))
+        return cached;
+    var data = attr ? buildAttrData(name) : buildPropData(name);
+    return cache[field] = data;
+};
 
 function assign(a, b) {
     var props = Object.keys(b);
     for (var i = 0, len = props.length; i < len; i++) {
         var name = props[i];
         a[name] = b[name];
+    }
+}
+function spread(node, obj, svg) {
+    var props = Object.keys(obj);
+    for (var i = 0, len = props.length; i < len; i++) {
+        var name = props[i];
+        setField(node, name, obj[name], svg);
+    }
+}
+function setField(node, field, value, svg) {
+    var _a = getFieldData(field, svg), name = _a[0], namespace = _a[1], flags = _a[2], type = flags & 3 /* Type */;
+    if (type === 0 /* Property */) {
+        if (namespace)
+            node = node[namespace];
+        node[name] = value;
+    }
+    else if (type === 1 /* Attribute */) {
+        if (namespace)
+            setAttributeNS(node, namespace, name, value);
+        else
+            setAttribute(node, name, value);
+    }
+    else if (type === 3 /* Assign */) {
+        if (value && typeof value === 'object')
+            assign(node.style, value);
     }
 }
 
@@ -1085,7 +1238,7 @@ const activeImage = S(() => images.find((image) => image.isActive()));
 const containerScale = S.on(
   t,
   ([w, h]) => {
-    const c = 0.5;
+    const c = 0.2;
     const [, , wt, ht] = activeImage() ? activeImage().rect : [0, 0, 1.5, 0];
     return [w + (wt - w) * c, h + (ht - h) * c];
   },
@@ -1097,9 +1250,35 @@ document.addEventListener("mousemove", (event) =>
   mouse([event.clientX, event.clientY])
 );
 
+const Crossfade = ({ activeKey, children, ...other }) => {
+  const container = (function () {
+      var __;
+      __ = createElement("div", null, null);
+      spread(__, other, false);
+      return __;
+  })();
+  const childMap = Object.fromEntries(
+    children.map((child) => [child.key, child])
+  );
+  S.on(activeKey, () => {
+    for (let child of container.children) {
+      const animation = child.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: 200,
+      });
+      animation.onfinish = () => child.remove();
+    }
+    if (activeKey()) {
+      console.log("b");
+      const child = childMap[activeKey()].cloneNode();
+      container.insertBefore(child, container.firstChild);
+    }
+  });
+  return container;
+};
+
 const main = (
   (function () {
-      var __, __div1, __insert2;
+      var __, __div1, __div1_insert1, __insert2;
       __ = createElement("div", null, null);
       assign(__.style, {
       position: "relative",
@@ -1110,41 +1289,42 @@ const main = (
       minHeight: "100vh",
     });
       __div1 = createElement("div", null, __);
+      __div1_insert1 = createTextNode('', __div1);
       __insert2 = createTextNode('', __);
-      S.effect(function (__current) { return content(__div1, images.map(({ src, isActive }) => {
-        return (
-          (function () {
-              var __;
-              __ = createElement("img", null, null);
-              S.effect(function () {
-                  __.src = src;
-                  assign(__.style, {
-              position: "absolute",
-              width: "100%",
-              height: "100%",
-              top: 0,
-              left: 0,
-              zIndex: isActive() ? 1 : 0,
-            });
+      S.effect(function (__range) { return insert(__range, Crossfade({
+    "activeKey": S(() => (activeImage() ? activeImage().src : undefined)),
+    "children": images.map(({ src }) => {
+          return (
+            (function () {
+                var __;
+                __ = createElement("img", null, null);
+                __.key = src;
+                __.src = src;
+                assign(__.style, {
+                position: "absolute",
+                width: "100%",
+                height: "100%",
+                top: 0,
+                left: 0,
               });
-              return __;
-          })()
-        );
-      }), __current); }, '');
+                return __;
+            })()
+          );
+        })
+})); }, { start: __div1_insert1, end: __div1_insert1 });
       S.effect(function () { assign(__div1.style, {
         overflow: "hidden",
         pointerEvents: "none",
         position: "fixed",
         top: 0,
         left: 0,
-        width: "15rem",
-        height: "15rem",
-        background: "lightGray",
-        transform: `translate(${mouse()[0]}px, ${
-          mouse()[1]
-        }px) translate(-50%, -50%) scale(${containerScale()[0]}, ${
-          containerScale()[1]
-        })`,
+        width: "50vmin",
+        height: "50vmin",
+        transform: "".concat(
+          `translate(${mouse()[0]}px, ${mouse()[1]}px)`,
+          `translate(-50%, -50%)`,
+          `scale(${containerScale()[0]}, ${containerScale()[1]})`
+        ),
       }); });
       S.effect(function (__range) { return insert(__range, items.map(({ title }, i) => (
       (function () {

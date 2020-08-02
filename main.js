@@ -37,7 +37,7 @@ const activeImage = S(() => images.find((image) => image.isActive()));
 const containerScale = S.on(
   t,
   ([w, h]) => {
-    const c = 0.5;
+    const c = 0.2;
     const [, , wt, ht] = activeImage() ? activeImage().rect : [0, 0, 1.5, 0];
     return [w + (wt - w) * c, h + (ht - h) * c];
   },
@@ -48,6 +48,27 @@ const mouse = S.data([0, 0]);
 document.addEventListener("mousemove", (event) =>
   mouse([event.clientX, event.clientY])
 );
+
+const Crossfade = ({ activeKey, children, ...other }) => {
+  const container = <div {...other}></div>;
+  const childMap = Object.fromEntries(
+    children.map((child) => [child.key, child])
+  );
+  S.on(activeKey, () => {
+    for (let child of container.children) {
+      const animation = child.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: 200,
+      });
+      animation.onfinish = () => child.remove();
+    }
+    if (activeKey()) {
+      console.log("b");
+      const child = childMap[activeKey()].cloneNode();
+      container.insertBefore(child, container.firstChild);
+    }
+  });
+  return container;
+};
 
 const main = (
   <div
@@ -67,31 +88,34 @@ const main = (
         position: "fixed",
         top: 0,
         left: 0,
-        width: "15rem",
-        height: "15rem",
-        background: "lightGray",
-        transform: `translate(${mouse()[0]}px, ${
-          mouse()[1]
-        }px) translate(-50%, -50%) scale(${containerScale()[0]}, ${
-          containerScale()[1]
-        })`,
+        width: "50vmin",
+        height: "50vmin",
+        transform: "".concat(
+          `translate(${mouse()[0]}px, ${mouse()[1]}px)`,
+          `translate(-50%, -50%)`,
+          `scale(${containerScale()[0]}, ${containerScale()[1]})`
+        ),
       }}
     >
-      {images.map(({ src, isActive }) => {
-        return (
-          <img
-            src={src}
-            style={{
-              position: "absolute",
-              width: "100%",
-              height: "100%",
-              top: 0,
-              left: 0,
-              zIndex: isActive() ? 1 : 0,
-            }}
-          />
-        );
-      })}
+      <Crossfade
+        activeKey={S(() => (activeImage() ? activeImage().src : undefined))}
+      >
+        {images.map(({ src }) => {
+          return (
+            <img
+              key={src}
+              src={src}
+              style={{
+                position: "absolute",
+                width: "100%",
+                height: "100%",
+                top: 0,
+                left: 0,
+              }}
+            />
+          );
+        })}
+      </Crossfade>
     </div>
     {items.map(({ title }, i) => (
       <h1

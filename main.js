@@ -55,16 +55,19 @@ const Crossfade = ({ activeKey, children, ...other }) => {
     children.map((child) => [child.key, child])
   );
   S.on(activeKey, () => {
-    for (let child of container.children) {
-      const animation = child.animate([{ opacity: 1 }, { opacity: 0 }], {
+    if (activeKey()) {
+      const child = childMap[activeKey()].cloneNode();
+      container.appendChild(child);
+      const animation = child.animate([{ opacity: 0 }, { opacity: 1 }], {
         duration: 200,
       });
-      animation.onfinish = () => child.remove();
-    }
-    if (activeKey()) {
-      console.log("b");
-      const child = childMap[activeKey()].cloneNode();
-      container.insertBefore(child, container.firstChild);
+      animation.onfinish = () => {
+        let c = container.firstChild;
+        while (c instanceof Node && c !== child) {
+          container.removeChild(c);
+          c = container.firstChild;
+        }
+      };
     }
   });
   return container;
@@ -88,8 +91,8 @@ const main = (
         position: "fixed",
         top: 0,
         left: 0,
-        width: "50vmin",
-        height: "50vmin",
+        width: "400px",
+        height: "400px",
         transform: "".concat(
           `translate(${mouse()[0]}px, ${mouse()[1]}px)`,
           `translate(-50%, -50%)`,

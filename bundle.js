@@ -1224,133 +1224,135 @@ const items = [
   { image: { src: "/assets/04.jpg", aspectRatio: 2 / 3 }, title: "Echo" },
 ];
 
-let t = S.data(0),
-  ts = S((ts) => ((ts[1] = ts[0]), (ts[0] = t()), ts), [0, 0]),
-  dt = S(() => ts()[0] - ts()[1]),
-  loop = (_t) => (t(_t), requestAnimationFrame(loop));
+S.root(() => {
+  let t = S.data(0),
+    ts = S((ts) => ((ts[1] = ts[0]), (ts[0] = t()), ts), [0, 0]),
+    dt = S(() => ts()[0] - ts()[1]),
+    loop = (_t) => (t(_t), requestAnimationFrame(loop));
 
-const images = items.map((item) => {
-  const rect = fitRect([0, 0, 1, item.image.aspectRatio], [0, 0, 1, 1]);
-  return { rect, ...item.image, isActive: S.data(false) };
-});
-
-const activeImage = S(() => images.find((image) => image.isActive()));
-const containerScale = S.on(
-  t,
-  ([w, h]) => {
-    const c = 0.2;
-    const [, , wt, ht] = activeImage() ? activeImage().rect : [0, 0, 1.5, 0];
-    return [w + (wt - w) * c, h + (ht - h) * c];
-  },
-  [1.5, 0]
-);
-const mouse = S.data([0, 0]);
-
-document.addEventListener("mousemove", (event) =>
-  mouse([event.clientX, event.clientY])
-);
-
-const Crossfade = ({ activeKey, children, ...other }) => {
-  const container = (function () {
-      var __;
-      __ = createElement("div", null, null);
-      spread(__, other, false);
-      return __;
-  })();
-  const childMap = Object.fromEntries(
-    children.map((child) => [child.key, child])
-  );
-  S.on(activeKey, () => {
-    if (activeKey()) {
-      const child = childMap[activeKey()].cloneNode();
-      container.appendChild(child);
-      const animation = child.animate([{ opacity: 0 }, { opacity: 1 }], {
-        duration: 200,
-      });
-      animation.onfinish = () => {
-        let c = container.firstChild;
-        while (c instanceof Node && c !== child) {
-          container.removeChild(c);
-          c = container.firstChild;
-        }
-      };
-    }
+  const images = items.map((item) => {
+    const rect = fitRect([0, 0, 1, item.image.aspectRatio], [0, 0, 1, 1]);
+    return { rect, ...item.image, isActive: S.data(false) };
   });
-  return container;
-};
 
-const main = (
-  (function () {
-      var __, __div1, __div1_insert1, __insert2;
-      __ = createElement("div", null, null);
-      assign(__.style, {
-      position: "relative",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: "100vh",
+  const activeImage = S(() => images.find((image) => image.isActive()));
+  const containerScale = S.on(
+    t,
+    ([w, h]) => {
+      const c = 0.2;
+      const [, , wt, ht] = activeImage() ? activeImage().rect : [0, 0, 1.5, 0];
+      return [w + (wt - w) * c, h + (ht - h) * c];
+    },
+    [1.5, 0]
+  );
+  const mouse = S.data([0, 0]);
+
+  document.addEventListener("mousemove", (event) =>
+    mouse([event.clientX, event.clientY])
+  );
+
+  const Crossfade = ({ activeKey, children, ...other }) => {
+    const container = (function () {
+        var __;
+        __ = createElement("div", null, null);
+        spread(__, other, false);
+        return __;
+    })();
+    const childMap = Object.fromEntries(
+      children.map((child) => [child.key, child])
+    );
+    S.on(activeKey, () => {
+      if (activeKey()) {
+        const child = childMap[activeKey()].cloneNode();
+        container.appendChild(child);
+        const animation = child.animate([{ opacity: 0 }, { opacity: 1 }], {
+          duration: 200,
+        });
+        animation.onfinish = () => {
+          let c = container.firstChild;
+          while (c instanceof Node && c !== child) {
+            container.removeChild(c);
+            c = container.firstChild;
+          }
+        };
+      }
     });
-      __div1 = createElement("div", null, __);
-      __div1_insert1 = createTextNode('', __div1);
-      __insert2 = createTextNode('', __);
-      S.effect(function (__range) { return insert(__range, Crossfade({
+    return container;
+  };
+
+  const main = (
+    (function () {
+        var __, __div1, __div1_insert1, __insert2;
+        __ = createElement("div", null, null);
+        assign(__.style, {
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+      });
+        __div1 = createElement("div", null, __);
+        __div1_insert1 = createTextNode('', __div1);
+        __insert2 = createTextNode('', __);
+        S.effect(function (__range) { return insert(__range, Crossfade({
     "activeKey": S(() => (activeImage() ? activeImage().src : undefined)),
     "children": images.map(({ src }) => {
-          return (
-            (function () {
-                var __;
-                __ = createElement("img", null, null);
-                __.key = src;
-                __.src = src;
-                assign(__.style, {
-                position: "absolute",
-                width: "100%",
-                height: "100%",
-                top: 0,
-                left: 0,
-              });
-                return __;
-            })()
-          );
-        })
+            return (
+              (function () {
+                  var __;
+                  __ = createElement("img", null, null);
+                  __.key = src;
+                  __.src = src;
+                  assign(__.style, {
+                  position: "absolute",
+                  width: "100%",
+                  height: "100%",
+                  top: 0,
+                  left: 0,
+                });
+                  return __;
+              })()
+            );
+          })
 })); }, { start: __div1_insert1, end: __div1_insert1 });
-      S.effect(function () { assign(__div1.style, {
-        overflow: "hidden",
-        pointerEvents: "none",
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "400px",
-        height: "400px",
-        transform: "".concat(
-          `translate(${mouse()[0]}px, ${mouse()[1]}px)`,
-          `translate(-50%, -50%)`,
-          `scale(${containerScale()[0]}, ${containerScale()[1]})`
-        ),
-      }); });
-      S.effect(function (__range) { return insert(__range, items.map(({ title }, i) => (
-      (function () {
-          var __;
-          __ = createElement("h1", null, null);
-          content(__, title, "");
-          S.effect(function () {
-              __.onmouseenter = () => images[i].isActive(true);
-              __.onmouseleave = () => images[i].isActive(false);
-              assign(__.style, {
-          fontFamily: "-apple-system, sans-serif",
-          fontSize: "4rem",
-          letterSpacing: "-0.05ch",
-          margin: 0,
-        });
+        S.effect(function () { assign(__div1.style, {
+          overflow: "hidden",
+          pointerEvents: "none",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "400px",
+          height: "400px",
+          transform: "".concat(
+            `translate(${mouse()[0]}px, ${mouse()[1]}px)`,
+            `translate(-50%, -50%)`,
+            `scale(${containerScale()[0]}, ${containerScale()[1]})`
+          ),
+        }); });
+        S.effect(function (__range) { return insert(__range, items.map(({ title }, i) => (
+        (function () {
+            var __;
+            __ = createElement("h1", null, null);
+            content(__, title, "");
+            S.effect(function () {
+                __.onmouseenter = () => images[i].isActive(true);
+                __.onmouseleave = () => images[i].isActive(false);
+                assign(__.style, {
+            fontFamily: "-apple-system, sans-serif",
+            fontSize: "4rem",
+            letterSpacing: "-0.05ch",
+            margin: 0,
           });
-          return __;
-      })()
-    ))); }, { start: __insert2, end: __insert2 });
-      return __;
-  })()
-);
+            });
+            return __;
+        })()
+      ))); }, { start: __insert2, end: __insert2 });
+        return __;
+    })()
+  );
 
-document.body.appendChild(main);
+  document.body.appendChild(main);
 
-loop();
+  loop();
+});

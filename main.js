@@ -1,5 +1,4 @@
 import * as Surplus from "surplus";
-import SArray from "s-array";
 import S from "s-js";
 
 const fitRect = (rect, target, cover) => {
@@ -23,6 +22,48 @@ const items = [
   { image: { src: "/assets/04.jpg", aspectRatio: 2 / 3 }, title: "Echo" },
 ];
 
+const Crossfade = ({ activeKey, children, ...other }) => {
+  const container = <div {...other}></div>;
+  const childMap = Object.fromEntries(
+    children.map((child) => [child.key, child])
+  );
+  S.on(activeKey, () => {
+    if (activeKey()) {
+      const child = childMap[activeKey()].cloneNode();
+      container.appendChild(child);
+      const animation = child.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 200,
+      });
+      animation.onfinish = () => {
+        let c = container.firstChild;
+        while (c instanceof Node && c !== child) {
+          container.removeChild(c);
+          c = container.firstChild;
+        }
+      };
+    }
+  });
+  return container;
+};
+
+const Transform = ({ translate, scale, style, children, ...other }) => {
+  return (
+    <div
+      {...other}
+      style={{
+        ...style,
+        transform: "".concat(
+          `translate(${translate()[0]}px, ${translate()[1]}px)`,
+          `translate(-50%, -50%)`,
+          `scale(${scale()[0]}, ${scale()[1]})`
+        ),
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
 S.root(() => {
   let t = S.data(0),
     ts = S((ts) => ((ts[1] = ts[0]), (ts[0] = t()), ts), [0, 0]),
@@ -44,35 +85,12 @@ S.root(() => {
     },
     [1.5, 0]
   );
+
   const mouse = S.data([0, 0]);
 
   document.addEventListener("mousemove", (event) =>
     mouse([event.clientX, event.clientY])
   );
-
-  const Crossfade = ({ activeKey, children, ...other }) => {
-    const container = <div {...other}></div>;
-    const childMap = Object.fromEntries(
-      children.map((child) => [child.key, child])
-    );
-    S.on(activeKey, () => {
-      if (activeKey()) {
-        const child = childMap[activeKey()].cloneNode();
-        container.appendChild(child);
-        const animation = child.animate([{ opacity: 0 }, { opacity: 1 }], {
-          duration: 200,
-        });
-        animation.onfinish = () => {
-          let c = container.firstChild;
-          while (c instanceof Node && c !== child) {
-            container.removeChild(c);
-            c = container.firstChild;
-          }
-        };
-      }
-    });
-    return container;
-  };
 
   const main = (
     <div
@@ -85,21 +103,18 @@ S.root(() => {
         minHeight: "100vh",
       }}
     >
-      <div
+      <Transform
         style={{
           overflow: "hidden",
           pointerEvents: "none",
           position: "fixed",
           top: 0,
           left: 0,
-          width: "400px",
-          height: "400px",
-          transform: "".concat(
-            `translate(${mouse()[0]}px, ${mouse()[1]}px)`,
-            `translate(-50%, -50%)`,
-            `scale(${containerScale()[0]}, ${containerScale()[1]})`
-          ),
+          width: "50vmin",
+          height: "50vmin",
         }}
+        translate={mouse}
+        scale={containerScale}
       >
         <Crossfade
           activeKey={S(() => (activeImage() ? activeImage().src : undefined))}
@@ -120,20 +135,21 @@ S.root(() => {
             );
           })}
         </Crossfade>
-      </div>
+      </Transform>
       {items.map(({ title }, i) => (
-        <h1
+        <a
           onMouseEnter={() => images[i].isActive(true)}
           onMouseLeave={() => images[i].isActive(false)}
           style={{
             fontFamily: "-apple-system, sans-serif",
-            fontSize: "4rem",
-            letterSpacing: "-0.05ch",
+            fontSize: "6rem",
+            letterSpacing: "-0.06ch",
             margin: 0,
+            cursor: "pointer",
           }}
         >
           {title}
-        </h1>
+        </a>
       ))}
     </div>
   );

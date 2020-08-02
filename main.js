@@ -1,7 +1,7 @@
 import * as Surplus from "surplus";
 import S from "s-js";
 
-const fitRect = (rect, target, cover) => {
+const fitRect = (rect, target) => {
   var sw = target[2] / rect[2];
   var sh = target[3] / rect[3];
   var scale = (sw + sh) / 2;
@@ -65,16 +65,12 @@ const Transform = ({ translate, scale, style, children, ...other }) => {
 };
 
 S.root(() => {
-  let t = S.data(0),
-    ts = S((ts) => ((ts[1] = ts[0]), (ts[0] = t()), ts), [0, 0]),
-    dt = S(() => ts()[0] - ts()[1]),
-    loop = (_t) => (t(_t), requestAnimationFrame(loop));
-
+  const t = S.data(0),
+  const loop = (_t) => (t(_t), requestAnimationFrame(loop));
   const images = items.map((item) => {
     const rect = fitRect([0, 0, 1, item.image.aspectRatio], [0, 0, 1, 1]);
     return { rect, ...item.image, isActive: S.data(false) };
   });
-
   const activeImage = S(() => images.find((image) => image.isActive()));
   const containerScale = S.on(
     t,
@@ -85,13 +81,7 @@ S.root(() => {
     },
     [1.5, 0]
   );
-
   const mouse = S.data([0, 0]);
-
-  document.addEventListener("mousemove", (event) =>
-    mouse([event.clientX, event.clientY])
-  );
-
   const main = (
     <div
       style={{
@@ -153,8 +143,9 @@ S.root(() => {
       ))}
     </div>
   );
-
   document.body.appendChild(main);
-
+  document.addEventListener("mousemove", (event) =>
+    mouse([event.clientX, event.clientY])
+  );
   loop();
 });
